@@ -1,4 +1,4 @@
-object Reverso extends App {
+object OthelloV2 extends App {
   val boardSize = 8
   type Board = List[List[Option[Boolean]]]
 
@@ -31,6 +31,25 @@ object Reverso extends App {
       println("|")
     }
     println(" +----------------")
+  }
+
+  def isMoveValid(board: Board, row: Int, col: Int, player: Boolean): Boolean = {
+    if (board(row)(col).isDefined) false // If piece is on field => returns false
+    else {
+      val directions = List((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
+      directions.exists { case (rowDirection, columnDirection) =>
+        val positions = LazyList.unfold((row + rowDirection, col + columnDirection)) {
+          case (r, c) if r >= 0 && r < board.size && c >= 0 && c < board.size =>
+            Some(((r, c), (r + rowDirection, c + columnDirection)))
+          case _ => None
+        }
+        val enemiesInDirection = positions.takeWhile { case (r, c) => board(r)(c).contains(!player) }.toList
+        enemiesInDirection.nonEmpty && {
+          val (r, c) = (row + rowDirection * (enemiesInDirection.size + 1), col + columnDirection * (enemiesInDirection.size + 1))
+          r >= 0 && r < board.size && c >= 0 && c < board.size && board(r)(c).contains(player)
+        }
+      }
+    }
   }
 
   def game(board: Board = initialBoard, currentPlayer: Boolean = true): Unit = {
