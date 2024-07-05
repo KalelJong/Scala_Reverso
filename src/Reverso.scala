@@ -1,4 +1,4 @@
-object OthelloV2 extends App {
+object Reverso extends App {
   val boardSize = 8
   type Board = List[List[Option[Boolean]]]
 
@@ -49,6 +49,30 @@ object OthelloV2 extends App {
           r >= 0 && r < board.size && c >= 0 && c < board.size && board(r)(c).contains(player)
         }
       }
+    }
+  }
+
+  def applyMove(board: Board, row: Int, col: Int, player: Boolean): Board = {
+    val directions = List((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
+    val updatedBoard = board.updated(row, board(row).updated(col, Some(player)))
+
+    directions.foldLeft(updatedBoard) { case (updtBoard, (rowDirection, colDirection)) =>
+      val enemiesToFlip = for {
+        (r, c) <- LazyList.unfold((row + rowDirection, col + colDirection)) {
+          case (r, c) if r >= 0 && r < board.size && c >= 0 && c < board.size && board(r)(c).contains(!player) =>
+            Some(((r, c), (r + rowDirection, c + colDirection)))
+          case _ => None
+        }
+      } yield (r, c)
+
+      if (enemiesToFlip.nonEmpty) {
+        val (fr, fc) = (row + rowDirection * (enemiesToFlip.size + 1), col + colDirection * (enemiesToFlip.size + 1))
+        if (fr >= 0 && fr < board.size && fc >= 0 && fc < board.size && board(fr)(fc).contains(player)) {
+          enemiesToFlip.foldLeft(updtBoard) { case (brd, (fr, fc)) =>
+            brd.updated(fr, brd(fr).updated(fc, Some(player)))
+          }
+        } else updtBoard
+      } else updtBoard
     }
   }
 
