@@ -33,6 +33,11 @@ object Reverso extends App {
     println(" +----------------")
   }
 
+  def areLinedUpEnemiesFollowedByAlly(board: Board, row: Int, rowDirection: Int, col: Int, columnDirection: Int, enemiesInDirection: List[(Int, Int)], player: Boolean): Boolean = {
+    val (r, c) = (row + rowDirection * (enemiesInDirection.size + 1), col + columnDirection * (enemiesInDirection.size + 1))
+    r >= 0 && r < board.size && c >= 0 && c < board.size && board(r)(c).contains(player)
+  }
+
   def isMoveValid(board: Board, row: Int, col: Int, player: Boolean): Boolean = {
     if (board(row)(col).isDefined) false // If piece is on field => returns false
     else {
@@ -44,10 +49,7 @@ object Reverso extends App {
           case _ => None
         }
         val enemiesInDirection = positions.takeWhile { case (r, c) => board(r)(c).contains(!player) }.toList
-        enemiesInDirection.nonEmpty && {
-          val (r, c) = (row + rowDirection * (enemiesInDirection.size + 1), col + columnDirection * (enemiesInDirection.size + 1))
-          r >= 0 && r < board.size && c >= 0 && c < board.size && board(r)(c).contains(player)
-        }
+        enemiesInDirection.nonEmpty && areLinedUpEnemiesFollowedByAlly(board, row, rowDirection, col, columnDirection, enemiesInDirection, player)
       }
     }
   }
@@ -66,8 +68,7 @@ object Reverso extends App {
       } yield (r, c)
 
       if (enemiesToFlip.nonEmpty) {
-        val (fr, fc) = (row + rowDirection * (enemiesToFlip.size + 1), col + colDirection * (enemiesToFlip.size + 1))
-        if (fr >= 0 && fr < board.size && fc >= 0 && fc < board.size && board(fr)(fc).contains(player)) {
+        if (areLinedUpEnemiesFollowedByAlly(updtBoard, row, rowDirection, col, colDirection, enemiesToFlip.toList, player)) {
           enemiesToFlip.foldLeft(updtBoard) { case (brd, (fr, fc)) =>
             brd.updated(fr, brd(fr).updated(fc, Some(player)))
           }
