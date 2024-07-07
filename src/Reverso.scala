@@ -76,9 +76,60 @@ object Reverso extends App {
     }
   }
 
+  def hasValidMoves(board: Board, player: Boolean): Boolean = {
+    board.indices.exists(row => board(row).indices.exists(col => isMoveValid(board, row, col, player)))
+  }
+
+  def validMoves(board: Board, player: Boolean): List[(Int, Int)] = {
+    (for {
+      row <- board.indices
+      col <- board(row).indices
+      if isMoveValid(board, row, col, player)
+    } yield (row, col)).toList
+  }
+
   def game(board: Board = initialBoard, currentPlayer: Boolean = true): Unit = {
-    boardCLI(board)
-    println("Game over!")
+    if (hasValidMoves(board, player = true) || hasValidMoves(board, player = false)) {
+      val validMovesList = validMoves(board, currentPlayer)
+      boardCLI(board, validMovesList)
+
+      if (validMovesList.nonEmpty) {
+        println(s"Player ${if (currentPlayer) "B" else "W"}'s turn.")
+        try {
+          val input = scala.io.StdIn.readLine("Enter move (e.g., d3): ")
+          if (input.length != 2) throw new IllegalArgumentException("Invalid input format. Please enter a letter followed by a number (e.g., d3).")
+
+          val col = input.charAt(0) - 'a'
+          val row = input.charAt(1).asDigit - 1
+
+          if (col < 0 || col >= boardSize || row < 0 || row >= boardSize) throw new IndexOutOfBoundsException("Move is out of bounds. Please try again.")
+
+          if (isMoveValid(board, row, col, currentPlayer)) {
+            val newBoard = applyMove(board, row, col, currentPlayer)
+            game(newBoard, !currentPlayer)
+          } else {
+            println("Invalid move, try again.")
+            game(board, currentPlayer)
+          }
+        } catch {
+          case e: IllegalArgumentException =>
+            println(e.getMessage)
+            game(board, currentPlayer)
+          case e: IndexOutOfBoundsException =>
+            println(e.getMessage)
+            game(board, currentPlayer)
+          case _: Throwable =>
+            println("An unexpected error occurred. Please try again.")
+            game(board, currentPlayer)
+        }
+      } else {
+        println(s"No valid moves for player ${if (currentPlayer) "B" else "W"}. Skipping turn.")
+        game(board, !currentPlayer)
+      }
+    } else {
+      boardCLI(board)
+      println("Game over!")
+    }
   }
 
   game()
